@@ -46,4 +46,7 @@ public class UserService {
         // Use a secure hashing algorithm like BCrypt or PBKDF2
         return BCrypt.hashpw(password, BCrypt.gensalt());
     }
+
+    public List<User> getAllUsers() {  return entityManager.createQuery("SELECT u FROM User u", User.class).getResultList();
+    }
 }
