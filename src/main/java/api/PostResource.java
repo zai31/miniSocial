@@ -5,6 +5,7 @@ import app.DTO.createPostDTO;
 import Domain.Post;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.EJB;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 
@@ -16,13 +17,14 @@ import jakarta.ws.rs.core.*;
 @Produces(MediaType.APPLICATION_JSON)
 public class PostResource {
 
-    @EJB
+    @Inject
     private PostService postService;
 
     @Context
     SecurityContext securityContext;
 
-    @POST
+   @POST
+   @Path("/post")
 
 //@RolesAllowed({"USER"}) // disable temporarily
     public Response createPost(createPostDTO dto) {
