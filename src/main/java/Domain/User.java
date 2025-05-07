@@ -77,8 +77,7 @@ public class User {
     private Role role; // Enum for 'user' or 'admin'
 
     // Getters and Setters
-
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "friendship",
             joinColumns = @JoinColumn(name = "user_id"),

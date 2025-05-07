@@ -2,6 +2,7 @@ package api;
 
 import Domain.User;
 import Services.UserServices.ProfileService;
+import Services.UserServices.UserService;
 import app.DTO.ProfileUpdateDTO;
 import jakarta.ejb.EJB;
 import jakarta.ws.rs.*;

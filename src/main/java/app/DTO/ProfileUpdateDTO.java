@@ -10,6 +10,7 @@ public class ProfileUpdateDTO {
     private String name;
     private String bio;
 
+
     public String getName() {
         return name;
     }

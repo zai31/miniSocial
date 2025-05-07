@@ -42,7 +42,7 @@ public class UserService {
         return user;
     }
 
-    String encryptPassword(String password) {
+   public String encryptPassword(String password) {
         // Use a secure hashing algorithm like BCrypt or PBKDF2
         return BCrypt.hashpw(password, BCrypt.gensalt());
     }

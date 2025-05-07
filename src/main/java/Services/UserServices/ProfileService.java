@@ -1,6 +1,7 @@
 package Services.UserServices;
 
 import Domain.User;
+import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -8,6 +9,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 @Stateless
 public class ProfileService {
+    @EJB
     UserService userService;
     @PersistenceContext(unitName = "persistence-unit")
     private EntityManager entityManager;
