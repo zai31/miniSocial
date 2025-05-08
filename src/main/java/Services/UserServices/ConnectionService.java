@@ -25,7 +25,7 @@ public class ConnectionService {
 
     public void respondToRequest(Long requestId, boolean accept) {
         Connection connection = em.find(Connection.class, requestId);
-        if (connection != null && connection.getStatus().equals("PENDING")) {
+        if (connection != null && connection.getStatus()== Status.PENDING) {
             connection.setStatus(Status.valueOf(accept ? "ACCEPTED" : "REJECTED"));
             em.merge(connection);
         }
@@ -38,16 +38,28 @@ public class ConnectionService {
     }
 
     public List<User> getFriends(Long userId) {
-        return em.createQuery("""
-            SELECT CASE
-                     WHEN c.sender.id = :uid THEN c.receiver
-                     ELSE c.sender
-                   END
-            FROM Connection c
-            WHERE (c.sender.id = :uid OR c.receiver.id = :uid) AND c.status = 'ACCEPTED'
-            """, User.class)
+        List<User> sent = em.createQuery("""
+        SELECT c.receiver FROM Connection c
+        WHERE c.sender.id = :uid AND c.status = 'ACCEPTED'
+        """, User.class)
                 .setParameter("uid", userId)
                 .getResultList();
+
+        List<User> received = em.createQuery("""
+        SELECT c.sender FROM Connection c
+        WHERE c.receiver.id = :uid AND c.status = 'ACCEPTED'
+        """, User.class)
+                .setParameter("uid", userId)
+                .getResultList();
+
+        sent.addAll(received);
+        return sent;
+    }
+
+    public User findUserById(Long senderId) {
+        return em.find(User.class, senderId);
     }
 }
+
+
 

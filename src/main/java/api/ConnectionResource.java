@@ -3,6 +3,7 @@ package api;
 import Domain.Connection;
 import Domain.User;
 import Services.UserServices.ConnectionService;
+import jakarta.ejb.EJB;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -15,12 +16,21 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ConnectionResource {
 
-    @Inject
+    @EJB
     private ConnectionService connectionService;
 
     @POST
     @Path("/send")
     public Response sendRequest(@QueryParam("senderId") Long senderId, @QueryParam("receiverId") Long receiverId) {
+        User sender = connectionService.findUserById(senderId);
+        User receiver = connectionService.findUserById(receiverId);
+
+        if (sender == null || receiver == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Invalid senderId or receiverId.")
+                    .build();
+        }
+
         connectionService.sendFriendRequest(senderId, receiverId);
         return Response.ok("Friend request sent.").build();
     }
@@ -41,6 +51,7 @@ public class ConnectionResource {
     @GET
     @Path("/friends")
     public List<User> getFriends(@QueryParam("userId") Long userId) {
+        System.out.println("connectionService = " + connectionService);
         return connectionService.getFriends(userId);
     }
 }
