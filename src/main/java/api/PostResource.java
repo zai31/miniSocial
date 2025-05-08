@@ -29,7 +29,7 @@ public class PostResource {
 //@RolesAllowed({"USER"}) // disable temporarily
     public Response createPost(createPostDTO dto) {
         // Temporarily hardcode a user
-        String userEmail = "test@example.com";
+        String userEmail = "jaoe@example.com";
 
         Post post = postService.createPost(userEmail, dto);
         return Response.status(Response.Status.CREATED).entity(post).build();
