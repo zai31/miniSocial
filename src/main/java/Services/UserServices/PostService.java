@@ -1,15 +1,19 @@
 package Services.UserServices;
 
-import Domain.Comment;
+import Domain.*;
 import app.DTO.PostDTO;
 import app.DTO.createPostDTO;
-import Domain.Post;
-import Domain.User;
+import jakarta.annotation.Resource;
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
+import jakarta.jms.JMSContext;
+import jakarta.jms.Queue;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
+import notificationModule.NotificationEvent;
+import notificationModule.NotificationProducer;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,8 +25,17 @@ public class PostService {
     @PersistenceContext
     private EntityManager em;
 
+    @Inject
+    private NotificationProducer notificationProducer;
     @EJB
     private ConnectionService connectionService;
+
+    @Resource(lookup = "java:/jms/queue/NotificationQueue")
+    private Queue notificationQueue;
+
+    @Inject
+    private JMSContext jmsContext;
+
 
     @Transactional
     public void createPost(Long authorId, String content, String imageUrl, String link) {
@@ -89,17 +102,73 @@ public class PostService {
 
     public void addComment(Long postId, Long userId, String text) {
         Comment comment = new Comment();
-        comment.setAuthor(em.find(User.class, userId));
-        comment.setPost(em.find(Post.class, postId));
+        User user = em.find(User.class, userId);
+        Post post = em.find(Post.class, postId);
+
+        // Check if the user is friends with the post's author
+        boolean isFriend = checkIfFriend(userId, post.getAuthor().getId());
+        if (!isFriend) {
+            throw new RuntimeException("You can only comment on posts from your friends.");
+        }
+
+        comment.setAuthor(user);
+        comment.setPost(post);
         comment.setText(text);
         comment.setCreatedAt(LocalDateTime.now());
         em.persist(comment);
+
+        if (!userId.equals(post.getAuthor().getId())) {
+            NotificationEvent event = new NotificationEvent();
+            event.setEventType("COMMENT");
+            event.setFromUserId(userId);
+            event.setToUserId(post.getAuthor().getId());
+            event.setMessage(user.getName() + " commented on your post.");
+            event.setPostId(postId);
+
+            notificationProducer.sendNotification(event);
+        }
     }
+
+    private boolean checkIfFriend(Long userId, Long postAuthorId) {
+        String query = "SELECT c FROM Connection c WHERE (c.sender.id = :userId AND c.receiver.id = :postAuthorId OR c.sender.id = :postAuthorId AND c.receiver.id = :userId) AND c.status = :status";
+        List<Connection> connections = em.createQuery(query, Connection.class)
+                .setParameter("userId", userId)
+                .setParameter("postAuthorId", postAuthorId)
+                .setParameter("status", Status.ACCEPTED)
+                .getResultList();
+
+        return !connections.isEmpty();
+    }
+
 
     public void likePost(Long postId, Long userId) {
         Post post = em.find(Post.class, postId);
         User user = em.find(User.class, userId);
-        post.getLikes().add(user);
-        em.merge(post);
+
+        // Check if the user is friends with the post's author
+        boolean isFriend = checkIfFriend(userId, post.getAuthor().getId());
+        if (!isFriend) {
+            throw new RuntimeException("You can only like posts from your friends.");
+        }
+
+        if (!post.getLikes().contains(user)) {
+            post.getLikes().add(user);
+            em.merge(post);
+
+            if (!userId.equals(post.getAuthor().getId())) {
+                NotificationEvent event = new NotificationEvent();
+                event.setEventType("LIKE");
+                event.setFromUserId(userId);
+                event.setToUserId(post.getAuthor().getId());
+                event.setMessage(user.getName() + " liked your post.");
+                event.setPostId(postId);
+
+                notificationProducer.sendNotification(event);
+            }
+        }
     }
+
+
+
+
 }

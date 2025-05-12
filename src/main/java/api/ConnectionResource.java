@@ -54,4 +54,39 @@ public class ConnectionResource {
         System.out.println("connectionService = " + connectionService);
         return connectionService.getFriends(userId);
     }
+
+    @GET
+    @Path("/search")
+    public Response searchUsers(@QueryParam("query") String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("Search query must not be empty.")
+                    .build();
+        }
+
+        List<User> users = connectionService.searchUsers(query);
+
+        if (users == null || users.isEmpty()) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("No users found.")
+                    .build();
+        }
+
+        return Response.ok(users).build();
+    }
+
+    @GET
+    @Path("/suggest")
+    public Response suggestFriends(@QueryParam("userId") Long userId) {
+        List<User> suggestedFriends = connectionService.suggestFriends(userId);
+
+        if (suggestedFriends == null || suggestedFriends.isEmpty()) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("No friend suggestions found.")
+                    .build();
+        }
+
+        return Response.ok(suggestedFriends).build();
+    }
+
 }
